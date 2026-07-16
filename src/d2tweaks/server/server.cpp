@@ -109,7 +109,7 @@ void d2_tweaks::server::server::register_tick_handler(modules::server_module* mo
 
 void d2_tweaks::server::server::register_packet_handler(common::message_types_t type, modules::server_module* module) {
 	if (m_packet_handlers[type] != nullptr) {
-		spdlog::warn("Serverside packet handler for {0} is already registered!", type);
+		spdlog::warn("Serverside packet handler for {0} is already registered!", static_cast<int>(type));
 	}
 
 	m_packet_handlers[type] = module;

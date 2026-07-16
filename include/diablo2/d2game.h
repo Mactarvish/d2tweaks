@@ -30,6 +30,8 @@ namespace diablo2 {
 
 		static int32_t identify_item(structures::game* game, structures::unit* player, structures::unit* item);
 		static int32_t pickup_gold_pile(structures::game* game, structures::unit* unit, structures::unit* item);
+		// 4th arg is an out-pointer written by the game (must not be null).
+		static uint32_t pickup_item(structures::game* game, structures::unit* player, uint32_t item_guid, uint32_t* item_carried);
 		
 		static structures::unit* get_unit_owner(structures::game* game, structures::unit* unit);
 		static void* iterate_unit_pets(structures::game* game, structures::unit* unit,

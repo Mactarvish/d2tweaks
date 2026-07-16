@@ -37,6 +37,11 @@ int32_t diablo2::d2_game::pickup_gold_pile(structures::game* game, structures::u
 	return pickup_gold_pile(game, unit, item);
 }
 
+uint32_t diablo2::d2_game::pickup_item(structures::game* game, structures::unit* player, uint32_t item_guid, uint32_t* item_carried) {
+	static wrap_func_fast<uint32_t(structures::game*, structures::unit*, uint32_t, uint32_t*)> pickup_item(0x13340, get_base());
+	return pickup_item(game, player, item_guid, item_carried);
+}
+
 void diablo2::d2_game::update_inventory_items(structures::game* game, structures::unit* player) {
 	static wrap_func_fast<void(structures::game*, structures::unit*, uint32_t)>update_inventory_items(0x14A90, get_base());
 	update_inventory_items(game, player, 0);
