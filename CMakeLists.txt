@@ -69,5 +69,13 @@ set_target_properties(nlohmann_json PROPERTIES
 )
 target_link_libraries(d2tweaks PRIVATE nlohmann_json nlohmann_json::nlohmann_json)
 
+#yaml-cpp
+find_package(yaml-cpp CONFIG REQUIRED)
+set_target_properties(yaml-cpp::yaml-cpp PROPERTIES
+	MAP_IMPORTED_CONFIG_MINSIZEREL Release
+	MAP_IMPORTED_CONFIG_RELWITHDEBINFO Release
+)
+target_link_libraries(d2tweaks PRIVATE yaml-cpp::yaml-cpp)
+
 set_target_properties(d2tweaks PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${D2_BASE_DIR}/MODS/test/)
 #set_target_properties(d2tweaks PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${D2_BASE_DIR}/MODS/Zy-El\ v.4.5.1/)

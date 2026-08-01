@@ -1,6 +1,8 @@
 #include <d2tweaks/server/modules/auto_gold_pickup/auto_gold_pickup.h>
 #include <d2tweaks/server/server.h>
 
+#include <common/config.h>
+
 #include <diablo2/d2game.h>
 #include <diablo2/d2common.h>
 #include <diablo2/structures/unit.h>
@@ -24,10 +26,16 @@ void d2_tweaks::server::modules::auto_gold_pickup::tick(diablo2::structures::gam
 	if (unit->type != diablo2::structures::unit_type_t::UNIT_TYPE_PLAYER)
 		return;
 
+	const auto& cfg = singleton<config>::instance();
+	if (!cfg.auto_gold_enabled())
+		return;
+
 	const auto room = diablo2::d2_common::get_room_from_unit(unit);
 
 	if (!room)
 		return;
+
+	const auto distance_limit = cfg.auto_gold_distance();
 
 	for (auto item = room->unit; item; item = item->prev_unit_in_room) {
 		if (!item)
@@ -49,7 +57,7 @@ void d2_tweaks::server::modules::auto_gold_pickup::tick(diablo2::structures::gam
 
 		const auto distance = diablo2::d2_common::get_distance_between_units(unit, item);
 
-		if (distance > 4)
+		if (distance > distance_limit)
 			continue;
 
 		const auto currentGold = diablo2::d2_common::get_stat(unit, diablo2::UNIT_STAT_GOLD, 0);

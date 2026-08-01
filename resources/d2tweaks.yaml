@@ -1,0 +1,17 @@
+﻿# d2tweaks 配置（与 d2tweaks.dll 同目录）
+
+auto_gold_pickup:
+  enabled: true
+  distance: 4
+
+auto_potion_pickup:
+  enabled: true
+  distance: 4
+  pickup_hp: true      # hp1-hp5
+  pickup_mp: true      # mp1-mp5
+  pickup_rejuv: true   # rvs / rvl
+  pickup_hpo: true     # 浓缩生命药水
+  pickup_runes: true
+  rune_min: 1          # r01
+  rune_max: 33         # r33
+  refill_belt: false   # 腰带自动补药（大背包 MOD 有风险，默认关）

@@ -49,6 +49,31 @@ BOOL diablo2::d2_common::inv_update_item(structures::inventory* inv, structures:
 	return inv_update_item(inv, item, isClient);
 }
 
+BOOL diablo2::d2_common::get_free_belt_slot(structures::inventory* inv, structures::unit* item, int32_t* free_slot) {
+	static wrap_func_std_import<BOOL(structures::inventory*, structures::unit*, int32_t*)> get_free_belt_slot(10269, get_base());
+	return get_free_belt_slot(inv, item, free_slot);
+}
+
+BOOL diablo2::d2_common::place_item_in_belt_slot(structures::inventory* inv, structures::unit* item, int32_t slot) {
+	static wrap_func_std_import<BOOL(structures::inventory*, structures::unit*, int32_t)> place_item_in_belt_slot(10266, get_base());
+	return place_item_in_belt_slot(inv, item, slot);
+}
+
+diablo2::structures::unit* diablo2::d2_common::get_item_from_belt_slot(structures::inventory* inv, int32_t slot) {
+	static wrap_func_std_import<structures::unit * (structures::inventory*, int32_t)> get_item_from_belt_slot(10271, get_base());
+	return get_item_from_belt_slot(inv, slot);
+}
+
+void diablo2::d2_common::set_inv_page(structures::unit* item, uint8_t page) {
+	static wrap_func_std_import<void(structures::unit*, uint8_t)> set_inv_page(10720, get_base());
+	set_inv_page(item, page);
+}
+
+int32_t diablo2::d2_common::get_item_node_page(structures::unit* item) {
+	static wrap_func_std_import<int32_t(structures::unit*)> get_item_node_page(10307, get_base());
+	return get_item_node_page(item);
+}
+
 diablo2::structures::items_line* diablo2::d2_common::get_item_record(uint32_t guid) {
 	static wrap_func_std_import<structures::items_line * (uint32_t)> get_item_record(10600, get_base());
 	return get_item_record(guid);

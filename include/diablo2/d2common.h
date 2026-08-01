@@ -334,6 +334,12 @@ namespace diablo2 {
 								 uint32_t invIndex, BOOL isClient, uint8_t page);
 		static BOOL inv_update_item(structures::inventory* inv, structures::unit* item, BOOL isClient);
 
+		static BOOL get_free_belt_slot(structures::inventory* inv, structures::unit* item, int32_t* free_slot);
+		static BOOL place_item_in_belt_slot(structures::inventory* inv, structures::unit* item, int32_t slot);
+		static structures::unit* get_item_from_belt_slot(structures::inventory* inv, int32_t slot);
+		static void set_inv_page(structures::unit* item, uint8_t page);
+		static int32_t get_item_node_page(structures::unit* item);
+
 		static structures::items_line* get_item_record(uint32_t guid);
 		static structures::item_types_line* get_item_type_record(uint32_t typeId);
 

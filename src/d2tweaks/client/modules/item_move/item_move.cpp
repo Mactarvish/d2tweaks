@@ -108,6 +108,23 @@ void d2_tweaks::client::modules::item_move::handle_packet(common::packet_header*
 
 	const auto player = diablo2::d2_client::get_local_player();
 
+	// Belt refill / move: page 5 == protocol flag for belt, tx == belt slot
+	if (itemMove->target_page == 5) {
+		// Native PlaceItemInBeltSlot already unlinks from previous grid — do not remove first.
+		if (diablo2::d2_common::place_item_in_belt_slot(player->inventory, item, static_cast<int32_t>(itemMove->tx))) {
+			item->mode = 2; // IMODE_INBELT
+			if (item->item_data->page == 5)
+				diablo2::d2_common::set_inv_page(item, 0);
+		}
+
+		const auto itemRecord = diablo2::d2_common::get_item_record(item->data_record_index);
+		if (itemRecord != nullptr)
+			diablo2::d2_client::play_sound(itemRecord->drop_sound, nullptr, 0, 0, 0);
+		else
+			diablo2::d2_client::play_sound(4, nullptr, 0, 0, 0);
+		return;
+	}
+
 	//Last parameter is some boolean
 	const auto inventoryIndex = diablo2::d2_common::get_inventory_index(player, itemMove->target_page, diablo2::d2_client::is_lod());
 

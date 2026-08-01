@@ -8,6 +8,7 @@
 
 #include <memory>
 
+#include <common/config.h>
 #include <d2tweaks/common/common.h>
 #include <d2tweaks/server/server.h>
 #include <d2tweaks/client/client.h>
@@ -45,6 +46,7 @@ void initialize() {
 #endif
 
 	init_log();
+	singleton<config>::instance(); // load d2tweaks.yaml after log is ready
 
 	if (MH_Initialize() != MH_OK) {
 		MessageBox(nullptr, "Cannot initialize hook system!", "Error", MB_OK | MB_ICONSTOP);

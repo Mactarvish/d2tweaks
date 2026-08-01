@@ -1,15 +1,40 @@
 #pragma once
 
 #include <fw/singleton.h>
-#include <nlohmann/json.hpp>
+#include <cstdint>
 
 class config : public singleton<config> {
-	nlohmann::json* m_json;
+	bool m_auto_gold_enabled = true;
+	int32_t m_auto_gold_distance = 4;
 
-	bool m_unlock_fps;
-	bool m_prevent_minimize;
-	uint32_t m_gold_pickup_range;
-	
+	bool m_auto_potion_enabled = true;
+	int32_t m_auto_potion_distance = 4;
+	bool m_pickup_hp = true;
+	bool m_pickup_mp = true;
+	bool m_pickup_rejuv = true;
+	bool m_pickup_hpo = true;
+	bool m_pickup_runes = true;
+	int32_t m_rune_min = 1;
+	int32_t m_rune_max = 33;
+	bool m_refill_belt = false;
+
+	void load_defaults();
+	void load_from_yaml(const char* path);
+
 public:
 	explicit config(token);
+
+	bool auto_gold_enabled() const { return m_auto_gold_enabled; }
+	int32_t auto_gold_distance() const { return m_auto_gold_distance; }
+
+	bool auto_potion_enabled() const { return m_auto_potion_enabled; }
+	int32_t auto_potion_distance() const { return m_auto_potion_distance; }
+	bool pickup_hp() const { return m_pickup_hp; }
+	bool pickup_mp() const { return m_pickup_mp; }
+	bool pickup_rejuv() const { return m_pickup_rejuv; }
+	bool pickup_hpo() const { return m_pickup_hpo; }
+	bool pickup_runes() const { return m_pickup_runes; }
+	int32_t rune_min() const { return m_rune_min; }
+	int32_t rune_max() const { return m_rune_max; }
+	bool refill_belt() const { return m_refill_belt; }
 };
