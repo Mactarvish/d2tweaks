@@ -1,17 +1,42 @@
-﻿# d2tweaks 配置（与 d2tweaks.dll 同目录）
+# d2tweaks 配置文件
+# 放在与 d2tweaks.dll 同级目录；改完需重启游戏生效
+# 找不到本文件时使用内置默认值（与下列默认一致）
 
+# ---------- 自动拾取金币 ----------
 auto_gold_pickup:
-  enabled: true
-  distance: 4
+  enabled: true        # 是否自动捡金币（物品代码 gld）
+  distance: 4          # 拾取距离（游戏单位，约等于贴脸范围）
 
+# ---------- 自动拾取药水 / 符文 ----------
 auto_potion_pickup:
-  enabled: true
-  distance: 4
-  pickup_hp: true      # hp1-hp5
-  pickup_mp: true      # mp1-mp5
-  pickup_rejuv: true   # rvs / rvl
-  pickup_hpo: true     # 浓缩生命药水
+  enabled: true        # 总开关；false 则下面全部不生效
+  distance: 4          # 拾取距离
+
+  # 红瓶：小～大生命药水（hp1 hp2 hp3 hp4 hp5）
+  pickup_hp: true
+
+  # 蓝瓶：小～大法力药水（mp1 mp2 mp3 mp4 mp5）
+  pickup_mp: true
+
+  # 紫瓶：恢复活力药水（rvs=小紫，rvl=大紫；同时回生命+法力，不是回城卷）
+  pickup_rejuv: true
+
+  # 浓缩生命药水（物品代码 hpo，部分 MOD 使用）
+  pickup_hpo: true
+
+  # 符文：按编号范围自动捡（r01=El … r33=Zod）
   pickup_runes: true
-  rune_min: 1          # r01
-  rune_max: 33         # r33
-  refill_belt: false   # 腰带自动补药（大背包 MOD 有风险，默认关）
+  rune_min: 1          # 最低符文编号（含），1 = r01
+  rune_max: 33         # 最高符文编号（含），33 = r33
+
+  # 回城卷轴（tsc）
+  pickup_tsc: true
+
+  # 完美宝石 + 完美骷髅（gpb/gpg/gpr/gpv/gpw/gpy/skz）
+  pickup_perfect_gems: true
+
+  # 小/中/大护身符（cm1/cm2/cm3）
+  pickup_charms: true
+
+  # 腰带自动补药：背包红/蓝/紫（恢复活力 rvs/rvl）补进腰带空位
+  refill_belt: true

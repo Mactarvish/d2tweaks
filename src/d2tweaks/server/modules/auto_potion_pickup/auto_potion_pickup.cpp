@@ -1,4 +1,5 @@
 #include <d2tweaks/server/modules/auto_potion_pickup/auto_potion_pickup.h>
+#include <d2tweaks/server/modules/portal_busy.h>
 #include <d2tweaks/server/server.h>
 
 #include <d2tweaks/common/protocol.h>
@@ -23,9 +24,24 @@ namespace {
 	constexpr uint32_t k_item_mode_in_belt = 2;
 	constexpr uint32_t k_item_mode_on_ground = 3;
 	constexpr uint8_t k_page_inventory = 0;
-	constexpr uint8_t k_packet_page_belt = 5; // protocol flag only
+	// Native belt items use INVPAGE_NULL (0xFF). Never write INVPAGE_BELT(5) onto item_data->page.
+	constexpr uint8_t k_page_null = 0xFF;
+	// item_move_sc.target_page==5 is only a protocol opcode meaning "belt", not an inv page.
+	constexpr uint8_t k_packet_belt_opcode = 5;
 	constexpr int32_t k_node_page_storage = 1;
-	constexpr int32_t k_node_page_belt = 2;
+	constexpr int32_t k_refill_tick_interval = 25;
+	// Vanilla 16-slot belt (D2Common #10269):
+	//   keys 1-4 drink slots 0/1/2/3 (bottom / HUD row)
+	//   column c stacks upward as c, c+4, c+8, c+12
+	// Do NOT treat 0/4/8/12 as the four hotkeys — that is column 0 only.
+
+	void sync_belt_item_minimal(diablo2::structures::unit* item) {
+		if (item->mode != k_item_mode_in_belt)
+			diablo2::d2_common::change_anim_mode(item, k_item_mode_in_belt);
+		diablo2::d2_common::set_inv_page(item, k_page_null);
+	}
+
+	void notify_client_belt_move(diablo2::structures::unit* player, uint32_t guid, int32_t slot);
 
 	bool code_eq(const char* code, const char* expected) {
 		return code[0] == expected[0]
@@ -63,6 +79,7 @@ namespace {
 	}
 
 	bool is_rejuv(const diablo2::structures::items_line* record) {
+		// rvs/rvl = 恢复活力药水（生命+法力），不是回城卷 tsc
 		if (!record)
 			return false;
 		const auto* code = record->string_code;
@@ -70,7 +87,35 @@ namespace {
 	}
 
 	bool is_hp_or_mp(const diablo2::structures::items_line* record) {
-		return is_hp(record) || is_mp(record) || is_hpo(record);
+		return is_hp(record) || is_mp(record) || is_hpo(record) || is_rejuv(record);
+	}
+
+	bool is_tsc(const diablo2::structures::items_line* record) {
+		return record && code_eq(record->string_code, "tsc");
+	}
+
+	bool is_perfect_gem(const diablo2::structures::items_line* record) {
+		if (!record)
+			return false;
+		const auto* code = record->string_code;
+		// gpb/gpg/gpr/gpv/gpw/gpy = 完美蓝绿红紫白黄宝石；skz = 完美骷髅
+		return code_eq(code, "gpb")
+			|| code_eq(code, "gpg")
+			|| code_eq(code, "gpr")
+			|| code_eq(code, "gpv")
+			|| code_eq(code, "gpw")
+			|| code_eq(code, "gpy")
+			|| code_eq(code, "skz");
+	}
+
+	bool is_charm(const diablo2::structures::items_line* record) {
+		if (!record)
+			return false;
+		const auto* code = record->string_code;
+		// cm1=小 cm2=中/大(2格) cm3=特大(3格)
+		return code_eq(code, "cm1")
+			|| code_eq(code, "cm2")
+			|| code_eq(code, "cm3");
 	}
 
 	bool should_auto_pickup(const diablo2::structures::items_line* record, const config& cfg) {
@@ -92,135 +137,75 @@ namespace {
 				return true;
 		}
 
+		if (cfg.pickup_tsc() && is_tsc(record))
+			return true;
+		if (cfg.pickup_perfect_gems() && is_perfect_gem(record))
+			return true;
+		if (cfg.pickup_charms() && is_charm(record))
+			return true;
+
 		return false;
 	}
 
-	bool find_inventory_space(diablo2::structures::game* game,
-							  diablo2::structures::unit* player,
-							  diablo2::structures::unit* item,
-							  uint32_t& x, uint32_t& y) {
-		const auto inventory_index = diablo2::d2_common::get_inventory_index(
-			player, k_page_inventory, game->item_format == 101);
-
-		char data[0x18];
-		diablo2::d2_common::get_inventory_data(inventory_index, 0, data);
-		const auto mx = static_cast<uint32_t>(data[0]);
-		const auto my = static_cast<uint32_t>(data[1]);
-
-		for (x = 0; x < mx; x++) {
-			for (y = 0; y < my; y++) {
-				diablo2::structures::unit* blocking = nullptr;
-				uint32_t blocking_index = 0;
-				if (diablo2::d2_common::can_put_into_slot(
-						player->inventory, item, x, y, inventory_index,
-						&blocking, &blocking_index, k_page_inventory)) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	void send_item_move(diablo2::structures::unit* player,
-						uint32_t guid, uint8_t page, uint32_t tx, uint32_t ty) {
+	void notify_client_belt_move(diablo2::structures::unit* player, uint32_t guid, int32_t slot) {
 		static d2_tweaks::common::item_move_sc resp;
 		resp.item_guid = guid;
-		resp.target_page = page;
-		resp.tx = tx;
-		resp.ty = ty;
+		resp.target_page = k_packet_belt_opcode;
+		resp.tx = static_cast<uint32_t>(slot);
+		resp.ty = 0;
 		singleton<d2_tweaks::server::server>::instance().send_packet(
 			player->player_data->net_client, &resp, sizeof resp);
 	}
 
-	bool place_into_inventory(diablo2::structures::game* game,
-							  diablo2::structures::unit* player,
-							  diablo2::structures::unit* item) {
-		uint32_t x = 0, y = 0;
-		if (!find_inventory_space(game, player, item, x, y))
-			return false;
-
-		const auto inventory_index = diablo2::d2_common::get_inventory_index(
-			player, k_page_inventory, game->item_format == 101);
-
-		diablo2::d2_common::set_inv_page(item, k_page_inventory);
-		item->mode = k_item_mode_stored;
-		item->item_data->page = k_page_inventory;
-
-		if (!diablo2::d2_common::inv_add_item(
-				player->inventory, item, x, y, inventory_index, false, k_page_inventory)) {
-			return false;
-		}
-
-		diablo2::d2_common::inv_update_item(player->inventory, item, false);
-		send_item_move(player, item->guid, k_page_inventory, x, y);
-		return true;
-	}
-
+	// Native GetFreeBeltSlot: same-type column first (hotkey 0-3), then a new
+	// empty column if the item has AutoBelt. Never mix red/blue/purple in one column.
+	// PlaceItemInBeltSlot already unlinks the item from the inventory grid.
+	// Do not call refresh_inventory / update_inventory_items (enlarged backpack).
 	bool try_move_to_belt(diablo2::structures::unit* player, diablo2::structures::unit* item) {
 		int32_t slot = -1;
 		if (!diablo2::d2_common::get_free_belt_slot(player->inventory, item, &slot))
 			return false;
+		if (slot < 0 || slot > 15)
+			return false;
 
-		// PlaceItemInBeltSlot already removes the item from its previous grid.
+		// First potion into an emptied column lands in hotkey 0-3. Vanilla 1-4
+		// often ignores that direct place; potions that later stack in 4/8/12
+		// and shift down work. Route the first one through the upper cell first.
+		if (slot < 4 && !diablo2::d2_common::get_item_from_belt_slot(player->inventory, slot)) {
+			const auto upper = slot + 4;
+			if (upper <= 15
+				&& !diablo2::d2_common::get_item_from_belt_slot(player->inventory, upper)
+				&& diablo2::d2_common::place_item_in_belt_slot(player->inventory, item, upper)) {
+				sync_belt_item_minimal(item);
+				notify_client_belt_move(player, item->guid, upper);
+				if (diablo2::d2_common::place_item_in_belt_slot(player->inventory, item, slot)) {
+					sync_belt_item_minimal(item);
+					notify_client_belt_move(player, item->guid, slot);
+				}
+				return true;
+			}
+		}
+
 		if (!diablo2::d2_common::place_item_in_belt_slot(player->inventory, item, slot))
 			return false;
 
-		item->mode = k_item_mode_in_belt;
-
-		// Belt items should not keep INVPAGE_BELT(5); native code leaves page alone for belt grid.
-		if (item->item_data->page == k_packet_page_belt)
-			diablo2::d2_common::set_inv_page(item, k_page_inventory);
-
-		send_item_move(player, item->guid, k_packet_page_belt,
-					   static_cast<uint32_t>(slot), 0);
+		sync_belt_item_minimal(item);
+		notify_client_belt_move(player, item->guid, slot);
 		return true;
-	}
-
-	// Recover potions stuck by earlier buggy refill (page==5 / wrong node page).
-	void recover_stuck_potions(diablo2::structures::game* game, diablo2::structures::unit* player) {
-		std::vector<diablo2::structures::unit*> stuck;
-
-		for (auto item = player->inventory->first_item; item; item = item->item_data->pt_next_item) {
-			if (!item->item_data)
-				continue;
-
-			const auto record = diablo2::d2_common::get_item_record(item->data_record_index);
-			if (!is_hp_or_mp(record))
-				continue;
-
-			const auto node_page = diablo2::d2_common::get_item_node_page(item);
-			const auto bad_page = item->item_data->page == k_packet_page_belt;
-			const auto stranded = item->mode != k_item_mode_in_belt
-				&& item->mode != k_item_mode_stored
-				&& item->mode != k_item_mode_on_ground;
-			const auto page5_or_orphaned = bad_page
-				|| (item->mode == k_item_mode_stored && node_page != k_node_page_storage && node_page != k_node_page_belt);
-
-			if (bad_page || stranded || page5_or_orphaned)
-				stuck.push_back(item);
-		}
-
-		for (auto* item : stuck) {
-			if (try_move_to_belt(player, item))
-				continue;
-
-			place_into_inventory(game, player, item);
-		}
 	}
 
 	void refill_belt_from_inventory(diablo2::structures::game* game, diablo2::structures::unit* player) {
 		if (!player->inventory || !player->player_data || !player->player_data->net_client)
 			return;
 
-		recover_stuck_potions(game, player);
-
-		std::vector<diablo2::structures::unit*> potions;
+		static uint32_t s_tick;
+		if ((++s_tick % static_cast<uint32_t>(k_refill_tick_interval)) != 0)
+			return;
 
 		for (auto item = player->inventory->first_item; item; item = item->item_data->pt_next_item) {
 			if (!item->item_data)
 				continue;
 
-			// Only backpack-stored potions (not already on belt).
 			if (item->mode != k_item_mode_stored)
 				continue;
 			if (item->item_data->page != k_page_inventory)
@@ -232,17 +217,9 @@ namespace {
 			if (!is_hp_or_mp(record))
 				continue;
 
-			potions.push_back(item);
-		}
-
-		bool moved_any = false;
-		for (auto* item : potions) {
 			if (try_move_to_belt(player, item))
-				moved_any = true;
+				return;
 		}
-
-		if (moved_any)
-			diablo2::d2_game::update_inventory_items(game, player);
 	}
 }
 
@@ -259,40 +236,41 @@ void d2_tweaks::server::modules::auto_potion_pickup::tick(diablo2::structures::g
 		return;
 
 	const auto& cfg = singleton<config>::instance();
-	if (!cfg.auto_potion_enabled())
-		return;
-
 	const auto room = diablo2::d2_common::get_room_from_unit(unit);
-	if (!room)
+	if (d2_tweaks::server::modules::player_busy_with_portal(unit, room))
 		return;
 
-	std::vector<uint32_t> guids;
-	const auto distance_limit = cfg.auto_potion_distance();
+	if (cfg.auto_potion_enabled()) {
+		if (room) {
+			std::vector<uint32_t> guids;
+			const auto distance_limit = cfg.auto_potion_distance();
 
-	for (auto item = room->unit; item; item = item->prev_unit_in_room) {
-		if (!item)
-			continue;
+			for (auto item = room->unit; item; item = item->prev_unit_in_room) {
+				if (!item)
+					continue;
 
-		if (item->type != diablo2::structures::unit_type_t::UNIT_TYPE_ITEM)
-			continue;
+				if (item->type != diablo2::structures::unit_type_t::UNIT_TYPE_ITEM)
+					continue;
 
-		if (item->mode != k_item_mode_on_ground)
-			continue;
+				if (item->mode != k_item_mode_on_ground)
+					continue;
 
-		const auto record = diablo2::d2_common::get_item_record(item->data_record_index);
-		if (!should_auto_pickup(record, cfg))
-			continue;
+				const auto record = diablo2::d2_common::get_item_record(item->data_record_index);
+				if (!should_auto_pickup(record, cfg))
+					continue;
 
-		const auto distance = diablo2::d2_common::get_distance_between_units(unit, item);
-		if (distance > distance_limit)
-			continue;
+				const auto distance = diablo2::d2_common::get_distance_between_units(unit, item);
+				if (distance > distance_limit)
+					continue;
 
-		guids.push_back(item->guid);
-	}
+				guids.push_back(item->guid);
+			}
 
-	for (const auto guid : guids) {
-		uint32_t item_carried = 0;
-		diablo2::d2_game::pickup_item(game, unit, guid, &item_carried);
+			for (const auto guid : guids) {
+				uint32_t item_carried = 0;
+				diablo2::d2_game::pickup_item(game, unit, guid, &item_carried);
+			}
+		}
 	}
 
 	if (cfg.refill_belt())

@@ -1,4 +1,5 @@
 #include <d2tweaks/server/modules/auto_gold_pickup/auto_gold_pickup.h>
+#include <d2tweaks/server/modules/portal_busy.h>
 #include <d2tweaks/server/server.h>
 
 #include <common/config.h>
@@ -33,6 +34,9 @@ void d2_tweaks::server::modules::auto_gold_pickup::tick(diablo2::structures::gam
 	const auto room = diablo2::d2_common::get_room_from_unit(unit);
 
 	if (!room)
+		return;
+
+	if (d2_tweaks::server::modules::player_busy_with_portal(unit, room))
 		return;
 
 	const auto distance_limit = cfg.auto_gold_distance();

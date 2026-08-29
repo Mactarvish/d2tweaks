@@ -74,6 +74,26 @@ int32_t diablo2::d2_common::get_item_node_page(structures::unit* item) {
 	return get_item_node_page(item);
 }
 
+BOOL diablo2::d2_common::change_anim_mode(structures::unit* unit, uint32_t mode) {
+	static wrap_func_std_import<BOOL(structures::unit*, uint32_t)> change_anim_mode(10348, get_base());
+	return change_anim_mode(unit, mode);
+}
+
+void diablo2::d2_common::set_item_cmd_flag(structures::unit* item, int32_t flag, BOOL set) {
+	static wrap_func_std_import<void(structures::unit*, int32_t, BOOL)> set_item_cmd_flag(10711, get_base());
+	set_item_cmd_flag(item, flag, set);
+}
+
+BOOL diablo2::d2_common::add_item_to_trade_inventory(structures::inventory* inv, structures::unit* item) {
+	static wrap_func_std_import<BOOL(structures::inventory*, structures::unit*)> add_item_to_trade_inventory(10283, get_base());
+	return add_item_to_trade_inventory(inv, item);
+}
+
+void diablo2::d2_common::refresh_inventory(structures::unit* unit, BOOL set_flag) {
+	static wrap_func_std_import<void(structures::unit*, BOOL)> refresh_inventory(10357, get_base());
+	refresh_inventory(unit, set_flag);
+}
+
 diablo2::structures::items_line* diablo2::d2_common::get_item_record(uint32_t guid) {
 	static wrap_func_std_import<structures::items_line * (uint32_t)> get_item_record(10600, get_base());
 	return get_item_record(guid);

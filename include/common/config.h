@@ -16,7 +16,13 @@ class config : public singleton<config> {
 	bool m_pickup_runes = true;
 	int32_t m_rune_min = 1;
 	int32_t m_rune_max = 33;
+	bool m_pickup_tsc = true;
+	bool m_pickup_perfect_gems = true;
+	bool m_pickup_charms = true;
 	bool m_refill_belt = false;
+
+	bool m_auto_enter_portal_enabled = true;
+	int32_t m_auto_enter_portal_key = 0x08; // VK_BACK
 
 	void load_defaults();
 	void load_from_yaml(const char* path);
@@ -36,5 +42,11 @@ public:
 	bool pickup_runes() const { return m_pickup_runes; }
 	int32_t rune_min() const { return m_rune_min; }
 	int32_t rune_max() const { return m_rune_max; }
+	bool pickup_tsc() const { return m_pickup_tsc; }
+	bool pickup_perfect_gems() const { return m_pickup_perfect_gems; }
+	bool pickup_charms() const { return m_pickup_charms; }
 	bool refill_belt() const { return m_refill_belt; }
+
+	bool auto_enter_portal_enabled() const { return m_auto_enter_portal_enabled; }
+	int32_t auto_enter_portal_key() const { return m_auto_enter_portal_key; }
 };

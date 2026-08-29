@@ -11,6 +11,7 @@ namespace d2_tweaks {
 			public:
 				void init() override;
 
+				void tick() override;
 				void handle_packet(common::packet_header* packet) override;
 			};
 		}

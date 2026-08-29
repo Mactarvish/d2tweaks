@@ -33,7 +33,13 @@ void config::load_defaults() {
 	m_pickup_runes = true;
 	m_rune_min = 1;
 	m_rune_max = 33;
+	m_pickup_tsc = true;
+	m_pickup_perfect_gems = true;
+	m_pickup_charms = true;
 	m_refill_belt = false;
+
+	m_auto_enter_portal_enabled = true;
+	m_auto_enter_portal_key = 0x08;
 }
 
 void config::load_from_yaml(const char* path) {
@@ -55,7 +61,15 @@ void config::load_from_yaml(const char* path) {
 			m_pickup_runes = get_bool(potion, "pickup_runes", m_pickup_runes);
 			m_rune_min = get_int(potion, "rune_min", m_rune_min);
 			m_rune_max = get_int(potion, "rune_max", m_rune_max);
+			m_pickup_tsc = get_bool(potion, "pickup_tsc", m_pickup_tsc);
+			m_pickup_perfect_gems = get_bool(potion, "pickup_perfect_gems", m_pickup_perfect_gems);
+			m_pickup_charms = get_bool(potion, "pickup_charms", m_pickup_charms);
 			m_refill_belt = get_bool(potion, "refill_belt", m_refill_belt);
+		}
+
+		if (const auto portal = root["auto_enter_portal"]) {
+			m_auto_enter_portal_enabled = get_bool(portal, "enabled", m_auto_enter_portal_enabled);
+			m_auto_enter_portal_key = get_int(portal, "key", m_auto_enter_portal_key);
 		}
 
 		m_auto_gold_distance = std::max(1, m_auto_gold_distance);
