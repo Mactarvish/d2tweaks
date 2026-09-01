@@ -58,14 +58,17 @@ void d2_tweaks::client::client::handle_packet(common::packet_header* packet, siz
 int32_t d2_tweaks::client::client::game_tick(int32_t a1) {
 	static auto& instance = singleton<client>::instance();
 
-	for (auto & tick_handler : instance.m_tick_handlers) {
+	const auto result = g_game_tick_original(a1);
+
+	// 角色面板读客户端 unit；抗性也在此帧重算后再写
+	for (auto& tick_handler : instance.m_tick_handlers) {
 		if (tick_handler == nullptr)
 			break;
 
 		tick_handler->tick();
 	}
 
-	return g_game_tick_original(a1);
+	return result;
 }
 
 int32_t d2_tweaks::client::client::draw_game_ui() {

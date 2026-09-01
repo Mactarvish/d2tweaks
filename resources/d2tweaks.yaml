@@ -40,3 +40,14 @@ auto_potion_pickup:
 
   # 腰带自动补药：背包红/蓝/紫（恢复活力 rvs/rvl）补进腰带空位
   refill_belt: true
+
+# ---------- 指定角色加成（仅内存，不改存档/表） ----------
+attr_boost:
+  enabled: false       # 四维倍率开关
+  multiplier: 100
+  resist_value: 2000   # 火/电/冰/毒抗 + 对应上限；0=关闭
+  armor_value: 5000    # 防御(护甲)；0=关闭
+  skill_level: 300     # 已学技能等级；0=关闭
+  hp_enabled: true     # 生命加成开关
+  hp_value: 200000     # 生命/最大生命（面板值）
+  name: DDDDDDDDD

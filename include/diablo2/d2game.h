@@ -27,6 +27,9 @@ namespace diablo2 {
 		static structures::net_client* get_net_client_from_id(structures::game* game, int32_t id);
 
 		static structures::unit* get_player_pet(structures::game* game, structures::unit* unit, uint32_t type, uint32_t index);
+		// Native hireling XP + level-up (packets, stats, skills). 1.10f / this mod's D2Game.
+		static void add_experience_for_hireling(structures::game* game, structures::unit* player,
+												structures::unit* hireling, uint32_t level, uint32_t bonus);
 
 		static int32_t identify_item(structures::game* game, structures::unit* player, structures::unit* item);
 		static int32_t pickup_gold_pile(structures::game* game, structures::unit* unit, structures::unit* item);

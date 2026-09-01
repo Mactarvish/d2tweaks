@@ -27,6 +27,13 @@ diablo2::structures::unit* diablo2::d2_game::get_player_pet(structures::game* ga
 	return get_player_pet(game, unit, type, index);
 }
 
+void diablo2::d2_game::add_experience_for_hireling(structures::game* game, structures::unit* player,
+												   structures::unit* hireling, uint32_t level, uint32_t bonus) {
+	static wrap_func_fast<void(structures::game*, structures::unit*, structures::unit*, uint32_t, uint32_t)>
+		add_experience_for_hireling(0x93360, get_base());
+	add_experience_for_hireling(game, player, hireling, level, bonus);
+}
+
 int32_t diablo2::d2_game::identify_item(structures::game* game, structures::unit* player, structures::unit* item) {
 	static wrap_func_fast<int32_t(structures::game*, structures::unit*, structures::unit*)> identify_item(0x19670, get_base());
 	return identify_item(game, player, item);

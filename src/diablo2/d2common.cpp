@@ -124,6 +124,11 @@ int32_t diablo2::d2_common::get_stat_signed(structures::unit* unit, unit_stats_t
 	return get_stat_signed(unit, stat, param);
 }
 
+int32_t diablo2::d2_common::get_base_stat(structures::unit* unit, unit_stats_t stat, int16_t param) {
+	static wrap_func_std_import<int32_t(structures::unit*, int32_t, int32_t)> get_base_stat(10521, get_base());
+	return get_base_stat(unit, stat, param);
+}
+
 int32_t diablo2::d2_common::_10111(int32_t* x, int32_t* y) {
 	static wrap_func_std_import<int32_t(int32_t*, int32_t*)> get_unk_coords(10111, get_base());
 	return get_unk_coords(x, y);
@@ -177,4 +182,26 @@ int32_t diablo2::d2_common::get_unit_precise_y(structures::unit* unit) {
 diablo2::structures::unit* diablo2::d2_common::get_target_from_path(structures::path* path) {
 	static wrap_func_std_import<structures::unit * (structures::path*)> get_target_from_path(10180, get_base());
 	return get_target_from_path(path);
+}
+
+void diablo2::d2_common::assign_skill(structures::unit* unit, uint32_t skill_id, uint32_t level, BOOL remove,
+									  const char* file, int32_t line) {
+	static wrap_func_std_import<void(structures::unit*, uint32_t, uint32_t, BOOL, const char*, int32_t)> assign_skill_fn(
+		10953, get_base());
+	assign_skill_fn(unit, skill_id, level, remove, file, line);
+}
+
+int32_t diablo2::d2_common::get_skill_id(structures::skill* skill) {
+	static wrap_func_std_import<int32_t(structures::skill*, const char*, int32_t)> get_skill_id_fn(10963, get_base());
+	return get_skill_id_fn(skill, nullptr, 0);
+}
+
+int32_t diablo2::d2_common::get_skill_level(structures::unit* unit, structures::skill* skill, BOOL with_bonus) {
+	static wrap_func_std_import<int32_t(structures::unit*, structures::skill*, BOOL)> get_skill_level_fn(10968, get_base());
+	return get_skill_level_fn(unit, skill, with_bonus);
+}
+
+void diablo2::d2_common::refresh_passive_skills(structures::unit* unit) {
+	static wrap_func_std_import<void(structures::unit*)> refresh_passive_skills_fn(10941, get_base());
+	refresh_passive_skills_fn(unit);
 }

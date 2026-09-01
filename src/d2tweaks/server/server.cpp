@@ -169,12 +169,15 @@ void d2_tweaks::server::server::iterate_server_units(diablo2::structures::game* 
 int32_t d2_tweaks::server::server::net_tick(diablo2::structures::game* game, diablo2::structures::unit* unit, int32_t a3, int32_t a4) {
 	static auto& instance = singleton<server>::instance();
 
-	for (size_t i = 0; i < sizeof instance.m_modules / sizeof(void*); i++) {
+	const auto result = g_net_tick_original(game, unit, a3, a4);
+
+	// 必须在原生 tick 之后：抗性等由游戏每帧重算，提前 set_stat 会被覆盖
+	for (size_t i = 0; i < sizeof instance.m_tick_handlers / sizeof(void*); i++) {
 		if (instance.m_tick_handlers[i] == nullptr)
 			break;
 
 		instance.m_tick_handlers[i]->tick(game, unit);
 	}
 
-	return g_net_tick_original(game, unit, a3, a4);
+	return result;
 }

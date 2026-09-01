@@ -9,6 +9,7 @@ namespace diablo2 {
 		struct path;
 		struct inventory;
 		struct room;
+		struct skill;
 
 		struct items_line;
 		struct item_types_line;
@@ -352,6 +353,7 @@ namespace diablo2 {
 		static int32_t set_stat(structures::unit* unit, unit_stats_t stat, uint32_t value, int16_t param);
 		static int32_t get_stat(structures::unit* unit, unit_stats_t stat, int16_t param);
 		static int32_t get_stat_signed(structures::unit* unit, unit_stats_t stat, int16_t param);
+		static int32_t get_base_stat(structures::unit* unit, unit_stats_t stat, int16_t param);
 
 		static int32_t _10111(int32_t* x, int32_t* y);
 		static int32_t _10116(int32_t x1, int32_t y1, int32_t* x, int32_t* y);
@@ -369,5 +371,11 @@ namespace diablo2 {
 		static int32_t get_unit_precise_y(structures::unit* unit);
 
 		static structures::unit* get_target_from_path(structures::path* path);
+
+		static void assign_skill(structures::unit* unit, uint32_t skill_id, uint32_t level, BOOL remove,
+								 const char* file, int32_t line);
+		static int32_t get_skill_id(structures::skill* skill);
+		static int32_t get_skill_level(structures::unit* unit, structures::skill* skill, BOOL with_bonus);
+		static void refresh_passive_skills(structures::unit* unit);
 	};
 }
